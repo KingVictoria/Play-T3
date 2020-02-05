@@ -12,15 +12,11 @@ let app = new PIXI.Application();
 // add canvas to document
 document.getElementById('gameBoard').appendChild(app.view);
 
-// making canvas resizable, changing display/position,
-// and resizing to window size
 app.renderer.autoDensity = true;
 app.renderer.view.style.position = 'absolute';
 app.renderer.view.style.display = 'block';
-
-width = window.innerWidth;
-height = window.innerHeight;
-
+let width = window.innerWidth;
+let height = window.innerHeight;
 app.renderer.resize(width, height);
 app.renderer.view.style.margin = 'auto';
 
@@ -131,6 +127,50 @@ function setup() {
     menu = new Sprite(resources["res/Menu.svg"].texture);
     tokenO = new Sprite(resources["res/Token O.svg"].texture);
     tokenX = new Sprite(resources["res/Token X.svg"].texture);
+    
+    addSprites();
+    resize();
+    window.addEventListener('resize', resize);
+
+    // INIT
+
+    for(i=0;i<9;i++) {
+        localBoardPops[i].square = i;
+        localBoardPops[i].renderable = false;
+        localBoardPops[i].interactive = true;
+        localBoardPops[i].buttonMode = true;
+        localBoardPops[i].on('pointerdown', localTapped);
+    }
+
+    for(i=0;i<9;i++) for(j=0;j<9;j++) {
+        globalBoardPops[i][j].board = i;
+        globalBoardPops[i][j].square = j;
+        globalBoardPops[i][j].renderable = false;
+        globalBoardPops[i][j].interactive = true;
+        globalBoardPops[i][j].buttonMode = true;
+        globalBoardPops[i][j].on('pointerdown', globalTapped);
+    }
+}
+
+function addSprites() {
+    app.stage.addChild(avatarO);
+    app.stage.addChild(avatarX);
+    app.stage.addChild(localBoard);
+    for(i=0;i<9;i++) {
+        app.stage.addChild(localBoardPops[i]);
+        app.stage.addChild(backgroundBoardSprites[i]);
+        for(j=0;j<9;j++) app.stage.addChild(globalBoardPops[i][j]);
+        app.stage.addChild(globalBoardVictorySprites[i]);
+    }
+    app.stage.addChild(menu);
+    app.stage.addChild(tokenO);
+    app.stage.addChild(tokenX);
+}
+
+function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    app.renderer.resize(width, height);
 
     const avatarWidth = width * 0.18;
     const avatarHeight = height * 0.096;
@@ -142,13 +182,11 @@ function setup() {
     avatarO.height = avatarHeight;
     avatarO.x = avatarOX;
     avatarO.y = avatarY;
-    app.stage.addChild(avatarO);
 
     avatarX.width = avatarWidth;
     avatarX.height = avatarHeight;
     avatarX.x = avatarXX;
     avatarX.y = avatarY;
-    app.stage.addChild(avatarX);
 
     let localBoardWidth = width * 0.835;
     let localBoardHeight = height * 0.385;
@@ -159,7 +197,6 @@ function setup() {
     localBoard.height = localBoardHeight;
     localBoard.x = localBoardX;
     localBoard.y = localBoardY;
-    app.stage.addChild(localBoard);
 
     let localBoardXInc = localBoardX;
     let localBoardYInc = localBoardY;
@@ -173,7 +210,6 @@ function setup() {
         localBoardPops[i].x = localBoardXInc;
         localBoardPops[i].y = localBoardYInc;
         
-        app.stage.addChild(localBoardPops[i]);
         localBoardXInc += localBoardWidth/3;
     }
 
@@ -195,8 +231,6 @@ function setup() {
         backgroundBoardSprites[i].x = boardXInc;
         backgroundBoardSprites[i].y = boardY;
         boardXInc += boardWidthBetween;
-
-        app.stage.addChild(backgroundBoardSprites[i]);
     }
 
     let yOffset = 0;
@@ -212,7 +246,6 @@ function setup() {
             globalBoardPops[i][j].x = backgroundBoardSprites[i].x + xOffset;
             globalBoardPops[i][j].y = backgroundBoardSprites[i].y + yOffset;
             xOffset += boardWidth/3;
-            app.stage.addChild(globalBoardPops[i][j]);
         }
         xOffset = 0;
         yOffset = 0;
@@ -225,14 +258,12 @@ function setup() {
         globalBoardVictorySprites[i].y = backgroundBoardSprites[i].y;
         globalBoardVictorySprites[i].visible = false;
 
-        app.stage.addChild(globalBoardVictorySprites[i]);
     }
 
     menu.width = 0.074 * width;
     menu.height = 0.03 * height;
     menu.x = 0.464 * width;
     menu.y = 0.083 * height;
-    app.stage.addChild(menu);
 
     let tokenWidth = width * 0.093;
     let tokenHeight = height * 0.043;
@@ -244,32 +275,11 @@ function setup() {
     tokenO.height = tokenHeight;
     tokenO.x = tokenOX;
     tokenO.y = tokenY;
-    app.stage.addChild(tokenO);
 
     tokenX.width = tokenWidth;
     tokenX.height = tokenHeight;
     tokenX.x = tokenXX;
     tokenX.y = tokenY;
-    app.stage.addChild(tokenX);
-
-    // INIT
-
-    for(i=0;i<9;i++) {
-        localBoardPops[i].square = i;
-        localBoardPops[i].renderable = false;
-        localBoardPops[i].interactive = true;
-        localBoardPops[i].buttonMode = true;
-        localBoardPops[i].on('pointerdown', localTapped);
-    }
-
-    for(i=0;i<9;i++) for(j=0;j<9;j++) {
-        globalBoardPops[i][j].board = i;
-        globalBoardPops[i][j].square = j;
-        globalBoardPops[i][j].renderable = false;
-        globalBoardPops[i][j].interactive = true;
-        globalBoardPops[i][j].buttonMode = true;
-        globalBoardPops[i][j].on('pointerdown', globalTapped);
-    }
 }
 
 function sleep(ms) {
