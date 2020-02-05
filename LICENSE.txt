@@ -1,0 +1,3 @@
+Copyright (c) 2020 Alexander Miller, Leonardo Koomen, Nathan Brackett
+
+All rights reserved.
