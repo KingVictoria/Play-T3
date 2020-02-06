@@ -1,33 +1,16 @@
-let type = "WebGL"
-if(!PIXI.utils.isWebGLSupported()){
-    type = "canvas"
-} 
-
-// prints console message
-PIXI.utils.sayHello(type);
-
-// make an application (dimensions are changed later)
+// Preloading
 let app = new PIXI.Application();
-
-// add canvas to document
 document.getElementById('gameBoard').appendChild(app.view);
 
-app.renderer.autoDensity = true;
-app.renderer.view.style.position = 'absolute';
-app.renderer.view.style.display = 'block';
-let width = window.innerWidth;
-let height = window.innerHeight;
-app.renderer.resize(width, height);
-app.renderer.view.style.margin = 'auto';
-
-// changing background color
-app.renderer.backgroundColor = 0xF1F3F6;
+// Load in renderer
+renderer = new Renderer();
 
 // making shortcut variables
 let loader = PIXI.loader;
 let resources = loader.resources;
 let Sprite = PIXI.Sprite;
 
+// sprite variables
 let avatarO;
 let avatarX;
 let localBoard;
@@ -38,9 +21,9 @@ let menu;
 let tokenO;
 let tokenX;
 let globalBoardVictorySprites;
-
 let line;
 
+// helper variables
 let victory = false;
 
 // Tokens (E = Empty, C = Cats)
@@ -49,6 +32,7 @@ let O = 'O';
 let E = 'E';
 let C = 'C';
 
+// Data for the game board
 class BoardData {
     constructor() {
         this.active = true;
@@ -70,6 +54,7 @@ class BoardData {
     }
 }
 
+// Data for each square
 class SquareData {
     constructor() {
         this.state = E;
@@ -91,7 +76,6 @@ class SquareData {
 let boardData = [];
 for(let i=0;i<9;i++) boardData.push(new BoardData());
 let currentBoard = -1;
-
 
 // Win States (used to check the current board and the global board for victories)
 winStates = [];
@@ -136,182 +120,10 @@ loader
     .add("res/cats.svg")
     .add("res/Token O.svg")
     .add("res/Token X.svg")
-    .load(setup);
+    .load(init);
 
-// ============= UI RENDERING/INIT ============= // ----------------------------------------------------------------------------
-
-function setup() {
-    avatarO = new Sprite(resources["res/AvatarO.svg"].texture);
-    avatarX = new Sprite(resources["res/AvatarX.svg"].texture);
-    localBoard = new Sprite(resources["res/BoardGray.svg"].texture);
-    localBoardPops = [];
-    for(let i=0;i<9;i++) { localBoardPops.push(new Sprite(resources["res/O.svg"].texture)); }
-    backgroundBoardSprites = [];
-    for(let i=0;i<9;i++) { backgroundBoardSprites.push(new Sprite(resources["res/smallBoard.svg"].texture)); }
-    globalBoardVictorySprites = [];
-    for(let i=0;i<9;i++) { globalBoardVictorySprites.push(new Sprite(resources["res/VictoryO.svg"].texture)); }
-    globalBoardPops = [[], [], [], [], [], [], [], [], []];
-    for(let i=0;i<9;i++) { for(let j=0;j<9;j++) { globalBoardPops[i].push(new Sprite(resources["res/smallO.svg"].texture)); } }
-    menu = new Sprite(resources["res/Menu.svg"].texture);
-    tokenO = new Sprite(resources["res/Token O.svg"].texture);
-    tokenX = new Sprite(resources["res/Token X.svg"].texture);
-    
-    addSprites();
-    resize();
-    window.addEventListener('resize', resize);
-
-    // INIT
-
-    for(i=0;i<9;i++) {
-        localBoardPops[i].square = i;
-        localBoardPops[i].renderable = false;
-        localBoardPops[i].interactive = true;
-        localBoardPops[i].buttonMode = true;
-        localBoardPops[i].on('pointerdown', localTapped);
-    }
-
-    for(i=0;i<9;i++) for(j=0;j<9;j++) {
-        globalBoardPops[i][j].board = i;
-        globalBoardPops[i][j].square = j;
-        globalBoardPops[i][j].renderable = false;
-        globalBoardPops[i][j].interactive = true;
-        globalBoardPops[i][j].buttonMode = true;
-        globalBoardPops[i][j].on('pointerdown', globalTapped);
-    }
-}
-
-function addSprites() {
-    app.stage.addChild(avatarO);
-    app.stage.addChild(avatarX);
-    app.stage.addChild(localBoard);
-    for(i=0;i<9;i++) {
-        app.stage.addChild(localBoardPops[i]);
-        app.stage.addChild(backgroundBoardSprites[i]);
-        for(j=0;j<9;j++) app.stage.addChild(globalBoardPops[i][j]);
-        app.stage.addChild(globalBoardVictorySprites[i]);
-    }
-    app.stage.addChild(menu);
-    app.stage.addChild(tokenO);
-    app.stage.addChild(tokenX);
-}
-
-function resize() {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    app.renderer.resize(width, height);
-
-    const avatarWidth = width * 0.18;
-    const avatarHeight = height * 0.096;
-    const avatarOX = width * 0.77;
-    const avatarXX = width * 0.05;
-    const avatarY = height * 0.02;
-
-    avatarO.width = avatarWidth;
-    avatarO.height = avatarHeight;
-    avatarO.x = avatarOX;
-    avatarO.y = avatarY;
-
-    avatarX.width = avatarWidth;
-    avatarX.height = avatarHeight;
-    avatarX.x = avatarXX;
-    avatarX.y = avatarY;
-
-    let localBoardWidth = width * 0.835;
-    let localBoardHeight = height * 0.385;
-    let localBoardX = width * 0.08;
-    let localBoardY = height * 0.58;
-
-    localBoard.width = localBoardWidth;
-    localBoard.height = localBoardHeight;
-    localBoard.x = localBoardX;
-    localBoard.y = localBoardY;
-
-    let localBoardXInc = localBoardX;
-    let localBoardYInc = localBoardY;
-    for(i=0; i < 9; i++) {
-        localBoardPops[i].width = localBoardWidth / 3;
-        localBoardPops[i].height = localBoardHeight / 3;
-        if(i != 0 && i % 3 == 0) {
-            localBoardYInc += localBoardHeight/3;
-            localBoardXInc = localBoardX;
-        }
-        localBoardPops[i].x = localBoardXInc;
-        localBoardPops[i].y = localBoardYInc;
-        
-        localBoardXInc += localBoardWidth/3;
-    }
-
-    let boardWidth = width * 0.253;
-    let boardHeight = height * 0.117;
-    let boardWidthBetween = width * 0.291;
-    let boardHeightBetween = height * 0.134;
-    let boardX = width * 0.083;
-    let boardY = height * 0.174;
-
-    let boardXInc = boardX;
-    for(i=0; i < 9; i++) {
-        backgroundBoardSprites[i].width = boardWidth;
-        backgroundBoardSprites[i].height = boardHeight;
-        if(i != 0 && i % 3 == 0) {
-            boardY += boardHeightBetween;
-            boardXInc = boardX;
-        }
-        backgroundBoardSprites[i].x = boardXInc;
-        backgroundBoardSprites[i].y = boardY;
-        boardXInc += boardWidthBetween;
-    }
-
-    let yOffset = 0;
-    let xOffset = 0;
-    for(i=0;i<9;i++) {
-        for(j=0;j<9;j++) {
-            globalBoardPops[i][j].width = boardWidth/3;
-            globalBoardPops[i][j].height = boardHeight/3;
-            if(j != 0 && j % 3 == 0) {
-                yOffset += boardHeight/3;
-                xOffset = 0;
-            }
-            globalBoardPops[i][j].x = backgroundBoardSprites[i].x + xOffset;
-            globalBoardPops[i][j].y = backgroundBoardSprites[i].y + yOffset;
-            xOffset += boardWidth/3;
-        }
-        xOffset = 0;
-        yOffset = 0;
-    }
-    
-    for(let i=0;i<9;i++) {
-        globalBoardVictorySprites[i].width = backgroundBoardSprites[i].width;
-        globalBoardVictorySprites[i].height = backgroundBoardSprites[i].height;
-        globalBoardVictorySprites[i].x = backgroundBoardSprites[i].x;
-        globalBoardVictorySprites[i].y = backgroundBoardSprites[i].y;
-        if(!victory) globalBoardVictorySprites[i].visible = false;
-        else globalBoardVictorySprites[i].visible = true;
-    }
-
-    menu.width = 0.074 * width;
-    menu.height = 0.03 * height;
-    menu.x = 0.464 * width;
-    menu.y = 0.083 * height;
-
-    let tokenWidth = width * 0.093;
-    let tokenHeight = height * 0.043;
-    let tokenOX = width * 0.661;
-    let tokenXX = width * 0.243;
-    let tokenY = height * 0.076;
-
-    tokenO.width = tokenWidth;
-    tokenO.height = tokenHeight;
-    tokenO.x = tokenOX;
-    tokenO.y = tokenY;
-
-    tokenX.width = tokenWidth;
-    tokenX.height = tokenHeight;
-    tokenX.x = tokenXX;
-    tokenX.y = tokenY;
-
-    if(line) {
-        renderVictory(line.board1, line.board2, line.token);
-    }
+function init() {
+    renderer.setup();
 }
 
 // ========== CONTROLS AND GAME LOGIC ========== // ----------------------------------------------------------------------------
@@ -341,13 +153,13 @@ async function localTapped() {
 
     // Waits 100ms to give players a response to tapping in the square
     if(currentBoard != this.square || boardData[this.square].state != E) {
-        render();
+        renderer.render();
         await sleep(100);
     }
 
     checkWinStates();
     select(this.square);
-    render();
+    renderer.render();
 
     freeze = false;
 }
@@ -357,7 +169,7 @@ function globalTapped() {
     if(freeze || victory) return;
     if(!boardData[this.board].isActive()) return;
     select(this.board);
-    render();
+    renderer.render();
 }
 
 // Checks to see if there are any win states and modifies data accordingly
@@ -373,7 +185,7 @@ function checkWinStates() {
     for(let i=0;i<9;i++) state += boardData[i].state;
     winStates.forEach(winState => {
         if(winState.state.test(state)) {
-            renderVictory(winState.row[0], winState.row[1], winState.token);
+            renderer.renderVictory(winState.row[0], winState.row[1], winState.token);
             victory = true;
         }
     });
@@ -413,130 +225,4 @@ function select(board) {
             boardData[i].active = false;
         }
     }
-}
-
-// ============ RENDERING FUNCTIONS ============ // ----------------------------------------------------------------------------
-
-// All render functions, will later also include things like 'renderScore' etc.
-function render() {
-    renderLocalBoard();
-    renderGlobalBoard();
-}
-
-// Renders the local board and makes parts interactive which should be
-function renderLocalBoard() {
-    if(victory) {
-        for(let i=0;i<9;i++) {
-            localBoardPops[i].visible = false;
-        }
-        return;
-    }
-
-    if(currentBoard == -1) {
-        localBoard.setTexture(resources["res/BoardGray.svg"].texture);
-        for(i=0;i<9;i++) {
-            localBoardPops[i].renderable = false;
-            localBoardPops[i].interactive = false;
-            localBoardPops[i].buttonMode = false;
-        }
-        return;
-    }
-
-    localBoard.setTexture(resources["res/Board.svg"].texture);
-
-    for(i=0;i<9;i++) {
-        switch(boardData[currentBoard].getSquare(i).getState()) {
-            case X:
-                localBoardPops[i].setTexture(resources["res/X.svg"].texture);
-                localBoardPops[i].renderable = true;
-                localBoardPops[i].interactive = false;
-                localBoardPops[i].buttonMode = false;
-                break;
-            case O:
-                localBoardPops[i].setTexture(resources["res/O.svg"].texture);
-                localBoardPops[i].renderable = true;
-                localBoardPops[i].interactive = false;
-                localBoardPops[i].buttonMode = false;
-                break;
-            default:
-                localBoardPops[i].renderable = false;
-                localBoardPops[i].interactive = true;
-                localBoardPops[i].buttonMode = true;
-        }
-    }
-}
-
-// Renders the global board and makes parts interactive which should be
-function renderGlobalBoard() {
-    if(victory) {
-        for(i=0;i<9;i++) boardData[i].active = false;
-    }
-
-    for(i=0;i<9;i++) {
-        if(boardData[i].active && boardData[i].state == 'E') {
-            backgroundBoardSprites[i].setTexture(resources["res/smallBoard.svg"].texture);
-        } else {
-            backgroundBoardSprites[i].setTexture(resources["res/smallBoardGray.svg"].texture);
-        }
-
-        for(j=0;j<9;j++) {
-            switch(boardData[i].getSquare(j).getState()) {
-                case X:
-                    globalBoardPops[i][j].setTexture(resources["res/smallX.svg"].texture);
-                    globalBoardPops[i][j].renderable = true;
-                    break;
-                case O:
-                    globalBoardPops[i][j].setTexture(resources["res/smallO.svg"].texture);
-                    globalBoardPops[i][j].renderable = true;
-                    break;
-                default:
-                    globalBoardPops[i][j].renderable = false;
-                    globalBoardPops[i][j].interactive = true;
-                    globalBoardPops[i][j].buttonMode = true;
-            }
-        }
-
-        if(boardData.state == C) {
-            globalBoardVictorySprites[i].visible = true;
-            globalBoardVictorySprites[i].setTexture(resources["res/cats.svg"].texture);
-        } else if(boardData[i].state != E) {
-            globalBoardVictorySprites[i].visible = true;
-            globalBoardVictorySprites[i].setTexture(resources["res/Victory"+boardData[i].state+".svg"].texture);
-        }
-    }
-}
-
-// used to draw a line at the end of a match marking the winning row
-function drawLine(x1, y1, x2, y2, color) {
-    if(line) line.destroy();
-    line = new PIXI.Graphics();
-    app.stage.addChild(line);
-
-    x2 -= x1;
-    y2 -= y1;
-    
-    line.position.set(x1, y1);
-    line.lineStyle(40, color)
-        .moveTo(0, 0)
-        .lineTo(x2, y2);
-}
-
-// Renders a victory
-function renderVictory(board1, board2, token) {
-    let xOffset = globalBoardVictorySprites[0].width / 2;
-    let yOffset = globalBoardVictorySprites[0].height / 2;
-
-    let x1 = globalBoardVictorySprites[board1].x + xOffset;
-    let y1 = globalBoardVictorySprites[board1].y + yOffset;
-    let x2 = globalBoardVictorySprites[board2].x + xOffset;
-    let y2 = globalBoardVictorySprites[board2].y + yOffset;
-    let colorX = 0x007BFE;
-    let colorO = 0xFF2D55;
-
-    if(token == X) drawLine(x1, y1, x2, y2, colorX);
-    if(token == O) drawLine(x1, y1, x2, y2, colorO);
-
-    line.board1 = board1;
-    line.board2 = board2;
-    line.token = token;
 }
