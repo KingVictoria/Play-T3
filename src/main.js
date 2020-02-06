@@ -39,6 +39,8 @@ let tokenO;
 let tokenX;
 let globalBoardVictorySprites;
 
+let line;
+
 let victory = false;
 
 // Tokens (E = Empty, C = Cats)
@@ -87,10 +89,34 @@ class SquareData {
 }
 
 let boardData = [];
-for(let i=0;i<9;i++) {
-    boardData.push(new BoardData());
-}
+for(let i=0;i<9;i++) boardData.push(new BoardData());
 let currentBoard = -1;
+
+
+// Win States (used to check the current board and the global board for victories)
+winStates = [];
+
+// X Win States
+winStates.push({state:/XXX....../, token:X, row:[0, 2]}); // x top row
+winStates.push({state:/...XXX.../, token:X, row:[3, 5]}); // x middle row
+winStates.push({state:/......XXX/, token:X, row:[6, 8]}); // x bottom row
+winStates.push({state:/X...X...X/, token:X, row:[0, 8]}); // x left to right diagonal
+winStates.push({state:/..X.X.X../, token:X, row:[2, 6]}); // x right to left diagonal
+winStates.push({state:/X..X..X../, token:X, row:[0, 6]}); // x left column
+winStates.push({state:/.X..X..X./, token:X, row:[1, 7]}); // x middle column
+winStates.push({state:/..X..X..X/, token:X, row:[2, 8]}); // x right column
+
+// O Win States
+winStates.push({state:/OOO....../, token:O, row:[0, 2]}); // o top row
+winStates.push({state:/...OOO.../, token:O, row:[3, 5]}); // o middle row
+winStates.push({state:/......OOO/, token:O, row:[6, 8]}); // o bottom row
+winStates.push({state:/O...O...O/, token:O, row:[0, 8]}); // o left to right diagonal
+winStates.push({state:/..O.O.O../, token:O, row:[2, 6]}); // o right to left diagonal
+winStates.push({state:/O..O..O../, token:O, row:[0, 6]}); // o left column
+winStates.push({state:/.O..O..O./, token:O, row:[1, 7]}); // o middle column
+winStates.push({state:/..O..O..O/, token:O, row:[2, 8]}); // o right column
+
+const empt = /E/; // there is an empty square
 
 // loading textures
 loader
@@ -111,6 +137,8 @@ loader
     .add("res/Token O.svg")
     .add("res/Token X.svg")
     .load(setup);
+
+// ============= UI RENDERING/INIT ============= // ----------------------------------------------------------------------------
 
 function setup() {
     avatarO = new Sprite(resources["res/AvatarO.svg"].texture);
@@ -256,8 +284,8 @@ function resize() {
         globalBoardVictorySprites[i].height = backgroundBoardSprites[i].height;
         globalBoardVictorySprites[i].x = backgroundBoardSprites[i].x;
         globalBoardVictorySprites[i].y = backgroundBoardSprites[i].y;
-        globalBoardVictorySprites[i].visible = false;
-
+        if(!victory) globalBoardVictorySprites[i].visible = false;
+        else globalBoardVictorySprites[i].visible = true;
     }
 
     menu.width = 0.074 * width;
@@ -280,13 +308,19 @@ function resize() {
     tokenX.height = tokenHeight;
     tokenX.x = tokenXX;
     tokenX.y = tokenY;
+
+    if(line) {
+        renderVictory(line.board1, line.board2, line.token);
+    }
 }
+
+// ========== CONTROLS AND GAME LOGIC ========== // ----------------------------------------------------------------------------
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-let freeze = false;
+let freeze = false; // used to freeze the controls
 
 // When part of the local board is tapped
 let player = true;
@@ -305,15 +339,14 @@ async function localTapped() {
         player = true;
     }
 
+    // Waits 100ms to give players a response to tapping in the square
     if(currentBoard != this.square || boardData[this.square].state != E) {
         render();
         await sleep(100);
     }
 
     checkWinStates();
- 
     select(this.square);
-
     render();
 
     freeze = false;
@@ -327,233 +360,39 @@ function globalTapped() {
     render();
 }
 
-function drawLine(x1, y1, x2, y2, color) {
-    let line = new PIXI.Graphics();
-    app.stage.addChild(line);
-
-    x2 -= x1;
-    y2 -= y1;
-    
-    line.position.set(x1, y1);
-    line.lineStyle(40, color)
-        .moveTo(0, 0)
-        .lineTo(x2, y2);
-}
-
 // Checks to see if there are any win states and modifies data accordingly
 function checkWinStates() {
-    const xtop = /XXX....../; // x top row
-    const xmid = /...XXX.../; // x middle row
-    const xbot = /......XXX/; // x bottom row
-    const xldg = /X...X...X/; // x left to right diagonal
-    const xrdg = /..X.X.X../; // x right to left diagonal
-    const xlco = /X..X..X../; // x left column
-    const xmco = /.X..X..X./; // x middle column
-    const xrco = /..X..X..X/; // x right column
-
-    const otop = /OOO....../; // o top row
-    const omid = /...OOO.../; // o middle row
-    const obot = /......OOO/; // o bottom row
-    const oldg = /O...O...O/; // o left to right diagonal
-    const ordg = /..O.O.O../; // o right to left diagonal
-    const olco = /O..O..O../; // o left column
-    const omco = /.O..O..O./; // o middle column
-    const orco = /..O..O..O/; // o right column
-
-    const empt = /E/; // there is an empty square
-
+    // in current board
     state = '';
     for(let i=0;i<9;i++) state += boardData[currentBoard].getSquare(i).state;
+    winStates.forEach(winState => { if(winState.state.test(state)) boardData[currentBoard].state = winState.token; });
+    if(!empt.test(state)) boardData[currentBoard].state = C;
 
-    switch(true) {
-        case xtop.test(state):
-        case xmid.test(state):
-        case xbot.test(state):
-        case xldg.test(state):
-        case xrdg.test(state):
-        case xlco.test(state):
-        case xmco.test(state):
-        case xrco.test(state):
-            boardData[currentBoard].state = X;
-            globalBoardVictorySprites[currentBoard].visible = true;
-            globalBoardVictorySprites[currentBoard].setTexture(resources["res/VictoryX.svg"].texture);
-            break;
-        case otop.test(state):
-        case omid.test(state):
-        case obot.test(state):
-        case oldg.test(state):
-        case ordg.test(state):
-        case olco.test(state):
-        case omco.test(state):
-        case orco.test(state):
-            boardData[currentBoard].state = O;
-            globalBoardVictorySprites[currentBoard].visible = true;
-            globalBoardVictorySprites[currentBoard].setTexture(resources["res/VictoryO.svg"].texture);
-            break;
-        case empt.test(state):
-            // NO WIN CONDITION, BOARD STILL PLAYABLE
-            break;
-        default:
-            boardData[currentBoard].state = C;
-            globalBoardVictorySprites[currentBoard].visible = true;
-            globalBoardVictorySprites[currentBoard].setTexture(resources["res/cats.svg"].texture);
-    }
-
-    
+    // in global board    
     state = '';
     for(let i=0;i<9;i++) state += boardData[i].state;
-    let xOffset = globalBoardVictorySprites[0].width / 2;
-    let yOffset = globalBoardVictorySprites[0].height / 2;
-    let x1, x2, y1, y2;
+    winStates.forEach(winState => {
+        if(winState.state.test(state)) {
+            renderVictory(winState.row[0], winState.row[1], winState.token);
+            victory = true;
+        }
+    });
+    if(!empt.test(state)) {
+        let x = 0;
+        let o = 0;
+        for(let i=0;i<9;i++) {
+            if(boardData[i].state == X) x++;
+            else if(boardData[i].state == O) o++;
+        }
 
-    switch(true) {
-        case xtop.test(state):
-            x1 = globalBoardVictorySprites[0].x + xOffset;
-            y1 = globalBoardVictorySprites[0].y + yOffset;
-            x2 = globalBoardVictorySprites[2].x + xOffset;
-            y2 = globalBoardVictorySprites[2].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xmid.test(state):
-            x1 = globalBoardVictorySprites[3].x + xOffset;
-            y1 = globalBoardVictorySprites[3].y + yOffset;
-            x2 = globalBoardVictorySprites[5].x + xOffset;
-            y2 = globalBoardVictorySprites[5].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xbot.test(state):
-            x1 = globalBoardVictorySprites[6].x + xOffset;
-            y1 = globalBoardVictorySprites[6].y + yOffset;
-            x2 = globalBoardVictorySprites[8].x + xOffset;
-            y2 = globalBoardVictorySprites[8].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xldg.test(state):
-            x1 = globalBoardVictorySprites[0].x + xOffset;
-            y1 = globalBoardVictorySprites[0].y + yOffset;
-            x2 = globalBoardVictorySprites[8].x + xOffset;
-            y2 = globalBoardVictorySprites[8].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xrdg.test(state):
-            x1 = globalBoardVictorySprites[2].x + xOffset;
-            y1 = globalBoardVictorySprites[2].y + yOffset;
-            x2 = globalBoardVictorySprites[6].x + xOffset;
-            y2 = globalBoardVictorySprites[6].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xlco.test(state):
-            x1 = globalBoardVictorySprites[0].x + xOffset;
-            y1 = globalBoardVictorySprites[0].y + yOffset;
-            x2 = globalBoardVictorySprites[6].x + xOffset;
-            y2 = globalBoardVictorySprites[6].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xmco.test(state):
-            x1 = globalBoardVictorySprites[1].x + xOffset;
-            y1 = globalBoardVictorySprites[1].y + yOffset;
-            x2 = globalBoardVictorySprites[7].x + xOffset;
-            y2 = globalBoardVictorySprites[7].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case xrco.test(state):
-            x1 = globalBoardVictorySprites[2].x + xOffset;
-            y1 = globalBoardVictorySprites[2].y + yOffset;
-            x2 = globalBoardVictorySprites[8].x + xOffset;
-            y2 = globalBoardVictorySprites[8].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0x007BFE);
-            victory = true;
-            break;
-        case otop.test(state):
-            x1 = globalBoardVictorySprites[0].x + xOffset;
-            y1 = globalBoardVictorySprites[0].y + yOffset;
-            x2 = globalBoardVictorySprites[2].x + xOffset;
-            y2 = globalBoardVictorySprites[2].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case omid.test(state):
-            x1 = globalBoardVictorySprites[3].x + xOffset;
-            y1 = globalBoardVictorySprites[3].y + yOffset;
-            x2 = globalBoardVictorySprites[5].x + xOffset;
-            y2 = globalBoardVictorySprites[5].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case obot.test(state):
-            x1 = globalBoardVictorySprites[6].x + xOffset;
-            y1 = globalBoardVictorySprites[6].y + yOffset;
-            x2 = globalBoardVictorySprites[8].x + xOffset;
-            y2 = globalBoardVictorySprites[8].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case oldg.test(state):
-            x1 = globalBoardVictorySprites[0].x + xOffset;
-            y1 = globalBoardVictorySprites[0].y + yOffset;
-            x2 = globalBoardVictorySprites[8].x + xOffset;
-            y2 = globalBoardVictorySprites[8].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case ordg.test(state):
-            x1 = globalBoardVictorySprites[2].x + xOffset;
-            y1 = globalBoardVictorySprites[2].y + yOffset;
-            x2 = globalBoardVictorySprites[6].x + xOffset;
-            y2 = globalBoardVictorySprites[6].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case olco.test(state):
-            x1 = globalBoardVictorySprites[0].x + xOffset;
-            y1 = globalBoardVictorySprites[0].y + yOffset;
-            x2 = globalBoardVictorySprites[6].x + xOffset;
-            y2 = globalBoardVictorySprites[6].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case omco.test(state):
-            x1 = globalBoardVictorySprites[1].x + xOffset;
-            y1 = globalBoardVictorySprites[1].y + yOffset;
-            x2 = globalBoardVictorySprites[7].x + xOffset;
-            y2 = globalBoardVictorySprites[7].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case orco.test(state):
-            x1 = globalBoardVictorySprites[2].x + xOffset;
-            y1 = globalBoardVictorySprites[2].y + yOffset;
-            x2 = globalBoardVictorySprites[8].x + xOffset;
-            y2 = globalBoardVictorySprites[8].y + yOffset;
-            drawLine(x1, y1, x2, y2, 0xFF2D55);
-            victory = true;
-            break;
-        case empt.test(state):
-            // NO WIN CONDITION, PLAY CONTINUES
-            break;
-        default:
-            let x = 0;
-            let o = 0;
-            for(let i=0;i<9;i++) {
-                if(boardData[i].state == X) x++;
-                if(boardData[i].state == O) o++;
-            }
-
-            if(o > x) {
-                // O VICTORY
-            } else if(x > o) {
-                // X VICTORY
-            } else {
-                // CATS GAME
-            }
-            victory = true;
+        if(o > x) {
+            console.log("O VICTORY");
+        } else if(x > o) {
+            console.log("X VICTORY");
+        } else {
+            console.log("CATS GAME");
+        }
+        victory = true;
     }
 }
 
@@ -575,6 +414,8 @@ function select(board) {
         }
     }
 }
+
+// ============ RENDERING FUNCTIONS ============ // ----------------------------------------------------------------------------
 
 // All render functions, will later also include things like 'renderScore' etc.
 function render() {
@@ -654,5 +495,48 @@ function renderGlobalBoard() {
                     globalBoardPops[i][j].buttonMode = true;
             }
         }
+
+        if(boardData.state == C) {
+            globalBoardVictorySprites[i].visible = true;
+            globalBoardVictorySprites[i].setTexture(resources["res/cats.svg"].texture);
+        } else if(boardData[i].state != E) {
+            globalBoardVictorySprites[i].visible = true;
+            globalBoardVictorySprites[i].setTexture(resources["res/Victory"+boardData[i].state+".svg"].texture);
+        }
     }
+}
+
+// used to draw a line at the end of a match marking the winning row
+function drawLine(x1, y1, x2, y2, color) {
+    if(line) line.destroy();
+    line = new PIXI.Graphics();
+    app.stage.addChild(line);
+
+    x2 -= x1;
+    y2 -= y1;
+    
+    line.position.set(x1, y1);
+    line.lineStyle(40, color)
+        .moveTo(0, 0)
+        .lineTo(x2, y2);
+}
+
+// Renders a victory
+function renderVictory(board1, board2, token) {
+    let xOffset = globalBoardVictorySprites[0].width / 2;
+    let yOffset = globalBoardVictorySprites[0].height / 2;
+
+    let x1 = globalBoardVictorySprites[board1].x + xOffset;
+    let y1 = globalBoardVictorySprites[board1].y + yOffset;
+    let x2 = globalBoardVictorySprites[board2].x + xOffset;
+    let y2 = globalBoardVictorySprites[board2].y + yOffset;
+    let colorX = 0x007BFE;
+    let colorO = 0xFF2D55;
+
+    if(token == X) drawLine(x1, y1, x2, y2, colorX);
+    if(token == O) drawLine(x1, y1, x2, y2, colorO);
+
+    line.board1 = board1;
+    line.board2 = board2;
+    line.token = token;
 }
