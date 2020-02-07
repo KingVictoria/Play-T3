@@ -29,6 +29,7 @@ class Renderer {
         this.renderGlobalBoard();
     }
 
+    // renders the local board (big bottom board) onto the screen and makes certain UI elements selectable
     renderLocalBoard() {
         if(data.victory) {
             for(let i=0;i<9;i++) localBoardPops[i].visible = false;
@@ -72,6 +73,7 @@ class Renderer {
         }
     }
 
+    // renders global board (nine smaller boards) onto the screen and makes certain UI elements selectable
     renderGlobalBoard() {
         for(let i=0;i<9;i++) {
             if(data.isSelectable(i)) {
@@ -107,6 +109,7 @@ class Renderer {
         }
     }
 
+    // a helper function to generically draw lines between two sets of coordinates
     drawLine(x1, y1, x2, y2, color) {
         if(line) line.destroy();
         line = new PIXI.Graphics();
@@ -121,6 +124,7 @@ class Renderer {
             .lineTo(x2, y2);
     }
 
+    // if there is a global victory state, this function is called to display that
     renderVictory(board1, board2, token) {
         let xOffset = globalBoardVictorySprites[0].width / 2;
         let yOffset = globalBoardVictorySprites[0].height / 2;
@@ -140,6 +144,7 @@ class Renderer {
         line.token = token;
     }
 
+    // right at the beginning and whenever the screen is resized this function is called to maintain proportions in the UI
     resize() {
         this.width = window.innerWidth;
         this.height = window.innerHeight;
@@ -292,7 +297,9 @@ class Renderer {
         app.stage.addChild(tokenX);
     }
 
-    // Sets all of the "pops" (token sprites) up on the local and global boards and attaches tap functions
+    /* Sets all of the "pops" (token sprites) up on the local and global boards and attaches tap functions (will require
+     * refactoring when different control schemes are added)
+     */
     setupPops() {
         for(let i=0;i<9;i++) {
             localBoardPops[i].square = i;

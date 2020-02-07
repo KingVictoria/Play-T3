@@ -2,7 +2,7 @@
 let app = new PIXI.Application();
 document.getElementById('gameBoard').appendChild(app.view);
 
-// Load in renderer
+// load in renderer
 renderer = new Renderer();
 
 // making shortcut variables
@@ -10,7 +10,13 @@ let loader = PIXI.loader;
 let resources = loader.resources;
 let Sprite = PIXI.Sprite;
 
-let data = new BoardData();
+// board data
+let data;
+
+// used to freeze the controls
+let freeze = false;
+
+// NOTE: right here should put a "Loading" thing, won't show for more than a second (likely)
 
 // loading textures
 loader
@@ -34,6 +40,7 @@ loader
 
 // Game initialization (will be used for much more in the future)
 function init() {
+    data = new BoardData(); // will pass in data for turn-based multiplayer in the future
     renderer.setup();
 }
 
@@ -45,9 +52,12 @@ function sleep(ms) {
 
 // ========== CONTROLS ========== // ----------------------------------------------------------------------------
 
-let freeze = false; // used to freeze the controls
+/* These controls are good for any mobile phone, but we'll need to make new ones for Smart TV, consoles, and computers
+ * as they will likely not have the local board & might not even support free clicking/tapping. I will likely make a
+ * ControlHandler in the future which will genericize controls, but we need to see what we need first.
+ */
 
-// When part of the local board is tapped
+// When part of the local board (the big square at the bottom) is tapped
 async function localTapped() {
     if(freeze || data.victory) return;
     if(data.currentBoard == -1) return;
@@ -71,7 +81,7 @@ async function localTapped() {
     freeze = false;
 }
 
-// When part of the global board is tapped
+// When part of the global board (one of the nine squares in the center screen) is tapped
 async function globalTapped() {
     if(freeze || data.victory) return;
     if(!data.isSelectable(this.board)) return;

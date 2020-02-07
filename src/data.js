@@ -30,37 +30,44 @@ class BoardData {
         this.generateWinStates();
     }
 
+    // Switches the turn between X and O, convenient for some things
     next() {
         if(this.turn == X)  this.turn = O;
         else                this.turn = X;
     }
 
+    // Gets the state of a board or a square in a board (don't define square if only want board)
     getState(board, square) {
         if(square === undefined)    return this.states[board];
         else                        return this.boards[board][square];
     }
 
+    // Whether a board or a square in a board is "marked" (don't define square if only want board)
     isMarked(board, square) {
         return this.getState(board, square) == X 
             || this.getState(board, square) == O
             || this.getState(board) == C;
     }
 
+    // Sets the state of a board or square in a board (don't define square if only want to set board)
     setState(state, board, square) {
         if(square === undefined)    this.states[board] = state;
         else                        this.boards[board][square] = state;
     }
 
+    // Whether a board or square in a board is selectable by the player in the current round (don't define square if only want board)
     isSelectable(board, square) {
         if(square == undefined) return !this.isMarked(board) && (board == this.currentBoard || this.currentBoard == -1);
         else                    return !this.isMarked(board, square);
     }
 
+    // Attempts to select a board, on failure will allow the next player to select the next board
     select(board) {
         if(this.isMarked(board))    this.currentBoard = -1;
         else                        this.currentBoard = board;
     }
 
+    // Checks if there are any win states, first in the current board then in the global board
     checkWinStates() {
         // in current board
         let state = '';
@@ -95,8 +102,8 @@ class BoardData {
         }
     }
 
+    // Generates the win state regexes and related info used to determine if there are any win states
     generateWinStates() {
-        // Win States (used to check the current board and the global board for victories)
         this.winStates = [];
 
         // X Win States
