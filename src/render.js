@@ -1,5 +1,17 @@
-// Renderer class handles all visual updates + UI
+// sprite variables
+let avatarO;
+let avatarX;
+let localBoard;
+let localBoardPops;
+let backgroundBoardSprites;
+let globalBoardPops;
+let menu;
+let tokenO;
+let tokenX;
+let globalBoardVictorySprites;
+let line;
 
+// Renderer class handles all visual updates + UI
 class Renderer {
     constructor() {
         app.renderer.autoDensity = true;
@@ -13,17 +25,17 @@ class Renderer {
     }
 
     render() {
-        this.renderLocalBoard(currentBoard);
+        this.renderLocalBoard();
         this.renderGlobalBoard();
     }
 
-    renderLocalBoard(currentBoard) {
-        if(victory) {
+    renderLocalBoard() {
+        if(data.victory) {
             for(let i=0;i<9;i++) localBoardPops[i].visible = false;
             return;
         }
     
-        if(currentBoard == -1) {
+        if(data.currentBoard == -1) {
             localBoard.setTexture(resources["res/BoardGray.svg"].texture);
             for(let i=0;i<9;i++) {
                 localBoardPops[i].renderable = false;
@@ -36,20 +48,23 @@ class Renderer {
         localBoard.setTexture(resources["res/Board.svg"].texture);
     
         for(let i=0;i<9;i++) {
-            switch(boardData[currentBoard].getSquare(i).getState()) {
+            switch(data.getState(data.currentBoard, i)) {
                 case X:
                     localBoardPops[i].setTexture(resources["res/X.svg"].texture);
+                    localBoardPops[i].visible = true;
                     localBoardPops[i].renderable = true;
                     localBoardPops[i].interactive = false;
                     localBoardPops[i].buttonMode = false;
                     break;
                 case O:
                     localBoardPops[i].setTexture(resources["res/O.svg"].texture);
+                    localBoardPops[i].visible = true;
                     localBoardPops[i].renderable = true;
                     localBoardPops[i].interactive = false;
                     localBoardPops[i].buttonMode = false;
                     break;
                 default:
+                    localBoardPops[i].visible = true;
                     localBoardPops[i].renderable = false;
                     localBoardPops[i].interactive = true;
                     localBoardPops[i].buttonMode = true;
@@ -58,19 +73,15 @@ class Renderer {
     }
 
     renderGlobalBoard() {
-        if(victory) {
-            for(let i=0;i<9;i++) boardData[i].active = false;
-        }
-    
         for(let i=0;i<9;i++) {
-            if(boardData[i].active && boardData[i].state == E) {
+            if(data.isSelectable(i)) {
                 backgroundBoardSprites[i].setTexture(resources["res/smallBoard.svg"].texture);
             } else {
                 backgroundBoardSprites[i].setTexture(resources["res/smallBoardGray.svg"].texture);
             }
     
             for(let j=0;j<9;j++) {
-                switch(boardData[i].getSquare(j).getState()) {
+                switch(data.getState(i, j)) {
                     case X:
                         globalBoardPops[i][j].setTexture(resources["res/smallX.svg"].texture);
                         globalBoardPops[i][j].renderable = true;
@@ -86,12 +97,12 @@ class Renderer {
                 }
             }
     
-            if(boardData.state == C) {
+            if(data.getState(i) == C) {
                 globalBoardVictorySprites[i].visible = true;
                 globalBoardVictorySprites[i].setTexture(resources["res/cats.svg"].texture);
-            } else if(boardData[i].state != E) {
+            } else if(data.getState(i) != E) {
                 globalBoardVictorySprites[i].visible = true;
-                globalBoardVictorySprites[i].setTexture(resources["res/Victory"+boardData[i].state+".svg"].texture);
+                globalBoardVictorySprites[i].setTexture(resources["res/Victory"+data.getState(i)+".svg"].texture);
             }
         }
     }
@@ -218,7 +229,7 @@ class Renderer {
             globalBoardVictorySprites[i].height = backgroundBoardSprites[i].height;
             globalBoardVictorySprites[i].x = backgroundBoardSprites[i].x;
             globalBoardVictorySprites[i].y = backgroundBoardSprites[i].y;
-            if(!victory) globalBoardVictorySprites[i].visible = false;
+            if(!data.victory) globalBoardVictorySprites[i].visible = false;
         }
     
         menu.width = 0.074 * this.width;
