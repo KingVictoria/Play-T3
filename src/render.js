@@ -146,15 +146,47 @@ class Renderer {
 
     // right at the beginning and whenever the screen is resized this function is called to maintain proportions in the UI
     resize() {
+
+        // ratio constants for the iPhone X
+        var iPhoneXConstants = {
+            avatarWidth: 0.18,
+            avatarHeight: 0.096,
+            avatarOX: 0.77,
+            avatarXX: 0.05,
+            avatarY: 0.02,
+            localBoardWidth: 0.835,
+            localBoardHeight: 0.385,
+            localBoardX: 0.08,
+            localBoardY: 0.58,
+            boardWidth: 0.253,
+            boardHeight: 0.117,
+            boardWidthBetween: 0.291,
+            boardHeightBetween: 0.134,
+            boardX: 0.083,
+            boardY: 0.174,
+            menuWidth: 0.074,
+            menuHeight: 0.03,
+            menuX: 0.464,
+            menuY: 0.083,
+            tokenWidth: 0.093,
+            tokenHeight: 0.043,
+            tokenOX: 0.661,
+            tokenXX: 0.243,
+            tokenY: 0.076
+        } // iPhoneXConstants
+
+        // set current constants to desired set of phone size ratios
+        var currentConstants = iPhoneXConstants;
+
         this.width = window.innerWidth;
         this.height = window.innerHeight;
         app.renderer.resize(this.width, this.height);
     
-        const avatarWidth = this.width * 0.18;
-        const avatarHeight = this.height * 0.096;
-        const avatarOX = this.width * 0.77;
-        const avatarXX = this.width * 0.05;
-        const avatarY = this.height * 0.02;
+        const avatarWidth = this.width * currentConstants.avatarWidth;
+        const avatarHeight = this.height * currentConstants.avatarHeight;
+        const avatarOX = this.width * currentConstants.avatarOX;
+        const avatarXX = this.width * currentConstants.avatarXX;
+        const avatarY = this.height * currentConstants.avatarY;
     
         avatarO.width = avatarWidth;
         avatarO.height = avatarHeight;
@@ -166,10 +198,10 @@ class Renderer {
         avatarX.x = avatarXX;
         avatarX.y = avatarY;
     
-        let localBoardWidth = this.width * 0.835;
-        let localBoardHeight = this.height * 0.385;
-        let localBoardX = this.width * 0.08;
-        let localBoardY = this.height * 0.58;
+        let localBoardWidth = this.width * currentConstants.localBoardWidth;
+        let localBoardHeight = this.height * currentConstants.localBoardHeight;
+        let localBoardX = this.width * currentConstants.localBoardX;
+        let localBoardY = this.height * currentConstants.localBoardY;
     
         localBoard.width = localBoardWidth;
         localBoard.height = localBoardHeight;
@@ -191,12 +223,12 @@ class Renderer {
             localBoardXInc += localBoardWidth/3;
         }
     
-        let boardWidth = this.width * 0.253;
-        let boardHeight = this.height * 0.117;
-        let boardWidthBetween = this.width * 0.291;
-        let boardHeightBetween = this.height * 0.134;
-        let boardX = this.width * 0.083;
-        let boardY = this.height * 0.174;
+        let boardWidth = this.width * currentConstants.boardWidth;
+        let boardHeight = this.height * currentConstants.boardHeight;
+        let boardWidthBetween = this.width * currentConstants.boardWidthBetween;
+        let boardHeightBetween = this.height * currentConstants.boardHeightBetween;
+        let boardX = this.width * currentConstants.boardX;
+        let boardY = this.height * currentConstants.boardY;
     
         let boardXInc = boardX;
         for(let i=0; i < 9; i++) {
@@ -237,16 +269,16 @@ class Renderer {
             if(!data.victory) globalBoardVictorySprites[i].visible = false;
         }
     
-        menu.width = 0.074 * this.width;
-        menu.height = 0.03 * this.height;
-        menu.x = 0.464 * this.width;
-        menu.y = 0.083 * this.height;
+        menu.width = this.width * currentConstants.menuWidth;
+        menu.height = this.height * currentConstants.menuHeight;
+        menu.x = this.width * currentConstants.menuX;
+        menu.y = this.height * currentConstants.menuY;
     
-        let tokenWidth = this.width * 0.093;
-        let tokenHeight = this.height * 0.043;
-        let tokenOX = this.width * 0.661;
-        let tokenXX = this.width * 0.243;
-        let tokenY = this.height * 0.076;
+        let tokenWidth = this.width * currentConstants.tokenWidth;
+        let tokenHeight = this.height * currentConstants.tokenHeight;
+        let tokenOX = this.width * currentConstants.tokenOX;
+        let tokenXX = this.width * currentConstants.tokenXX;
+        let tokenY = this.height * currentConstants.tokenY;
     
         tokenO.width = tokenWidth;
         tokenO.height = tokenHeight;
