@@ -1,6 +1,6 @@
 {
-  "name": "JungleBridgeWireFrame",
-  "description": "Wireframe for JungleBridge",
+  "name": "T3 Socket.io Node app",
+  "description": "Socket.io integration into the T3 Node app",
   "version": "1.0.0",
   "scripts": {
     "start": "cd server/ && npm start",
