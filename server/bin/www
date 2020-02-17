@@ -40,9 +40,8 @@ var Player = function(id){
   var id = id;
 }
 
-/**
- * Socket dependency
- */
+
+// Socket dependency
 var io = require('socket.io')(server);
 // Socket connection
 io.on('connection', function(socket){
