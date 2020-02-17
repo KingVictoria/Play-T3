@@ -3,10 +3,8 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
-const indexRouter = require('./routes/index');
-const cors = require('cors');
-
-
+const indexRouter = require('./routes/index.js');
+const cors = require('cors')
 
 const app = express();
 
@@ -18,7 +16,7 @@ app.use(cookieParser());
 
 app.use('/api', indexRouter);
 
-// Render React page
+// Render page
 app.use(express.static(path.join(__dirname, "../")));
 app.get("/*", (req, res) => {
     res.sendFile(path.join(__dirname, "../index.html"));

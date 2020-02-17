@@ -30,6 +30,36 @@ server.on('error', onError);
 server.on('listening', onListening);
 
 /**
+ * Socket and Player list, replace with database query
+ */
+var socketList = {};
+var playerList = {};
+
+// Player Constructor
+var Player = function(id){
+  var id = id;
+}
+
+/**
+ * Socket dependency
+ */
+var io = require('socket.io')(server);
+// Socket connection
+io.on('connection', function(socket){
+  console.log('connected');
+  socket.id = Math.random();
+  socketList[socket.id] = socket;
+
+  var player = Player(socket.id);
+  playerList[socket.id] = player;
+
+  socket.on('disconnect', function(){
+    delete socketList[socket.id];
+    delete playerList[socket.id];
+  })
+})
+
+/**
  * Normalize a port into a number, string, or false.
  */
 
