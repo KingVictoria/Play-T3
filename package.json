@@ -1,5 +1,5 @@
 {
-  "name": "T3 Socket.io Node app",
+  "name": "t3socketio",
   "description": "Socket.io integration into the T3 Node app",
   "version": "1.0.0",
   "scripts": {
